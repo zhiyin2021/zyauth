@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/zhiyin2021/zyauth/request"
@@ -132,6 +133,24 @@ func (d *dingtalkAuth) SendMessage(toUser, content string) error {
 func (d *dingtalkAuth) AuthUrl(redirectUrl, state string) string {
 	return fmt.Sprintf(`https://login.dingtalk.com/oauth2/auth?response_type=code&client_id=%s&scope=openid&state=%s&redirect_uri=%s&prompt=consent`,
 		d.appId, state, url.QueryEscape(redirectUrl))
+}
+
+func (d *dingtalkAuth) loadData() {
+	tmp, err := os.ReadFile("zyauth.hisory")
+	if err == nil {
+		var data struct {
+			Token string `json:"token"`
+			Last  int64  `json:"last"`
+		}
+		if err := json.Unmarshal(tmp, &data); err == nil {
+			d.access_token = data.Token
+			d.access_last = time.Unix(data.Last, 0)
+		}
+	}
+}
+func (d *dingtalkAuth) saveData() {
+	data := fmt.Sprintf(`{"token":"%s","last":%d"`, d.access_token, d.access_last.Unix())
+	os.WriteFile("zyauth.hisory", []byte(data), 0666)
 }
 
 // func OnChatReceive(ctx context.Context, data *chatbot.BotCallbackDataModel) ([]byte, error) {

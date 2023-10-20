@@ -12,6 +12,8 @@ type Auth interface {
 	GetUserDetail(userId string) *request.UserDetail
 	GetUserInfo(code string) *request.UserInfo
 	AuthUrl(redirectUrl, state string) string
+	saveData()
+	loadData()
 }
 type authBase struct {
 	access_token string
@@ -28,12 +30,15 @@ func NewAuth(tp, appId, appSecret, agentId string) Auth {
 		appSecret: appSecret,
 		agentId:   agentId,
 	}
+	var auth Auth
 	switch tp {
 	case "wechat":
-		return &wechatAuth{base}
+		auth = &wechatAuth{base}
 	case "dingtalk":
-		return &dingtalkAuth{base}
+		auth = &dingtalkAuth{base}
 	default:
 		panic("not support auth type")
 	}
+	auth.loadData()
+	return auth
 }
