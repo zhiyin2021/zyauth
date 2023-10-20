@@ -1,6 +1,9 @@
 package zyauth
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -38,11 +41,15 @@ func (d *dingtalkAuth) GetAccessToken() string {
 	}
 	d.access_token = data.AccessToken
 	d.access_last = time.Now().Add(time.Second * 7200)
+	d.saveData()
 	return d.access_token
 }
 func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
-	url := d.url(`topapi/v2/user/getuserinfo?access_token=%s`, d.GetAccessToken())
-	buf, err := request.Post(url, []byte(fmt.Sprintf(`{"code":"%s"}`, code)))
+	// url := d.url(`topapi/v2/user/getuserinfo?access_token=%s`, d.GetAccessToken())
+	timestamp, sign := d.genSign()
+	url := d.url(`sns/getuserinfo_bycode?accessKey=%s&timestamp=%s&signature=&s`, d.GetAccessToken(), timestamp, sign)
+
+	buf, err := request.Post(url, request.H{"tmp_auth_code": code})
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
@@ -53,11 +60,38 @@ func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
 		return nil
 	}
 	userInfo := &request.UserInfo{
-		UserId: data.Result.Userid,
+		UserId: d.unionIdToUserId(data.Result.Unionid),
 	}
 	return userInfo
 }
+func (d *dingtalkAuth) genSign() (string, string) {
+	timestamp := fmt.Sprintf("%d", time.Now().UnixMilli())
+	mac := hmac.New(sha256.New, []byte(d.appSecret))
+	tmp := mac.Sum([]byte(timestamp))
+	sign := base64.StdEncoding.EncodeToString(tmp)
+	sign = url.QueryEscape(sign)
+	return timestamp, sign
+}
+func (d *dingtalkAuth) unionIdToUserId(unionid string) string {
 
+	// url := d.url(`topapi/v2/user/getuserinfo?access_token=%s`, d.GetAccessToken())
+	url := d.url(`user/getUseridByUnionid?accessKey=%s&unionid=%s`, d.GetAccessToken(), unionid)
+
+	buf, err := request.Get(url)
+	if err != nil {
+		logrus.Errorf("get accesstoken err:%s", err)
+		return ""
+	}
+	var data map[string]any
+	if err := json.Unmarshal(buf, &data); err != nil {
+		logrus.Errorf("get accesstoken err:%s", err)
+		return ""
+	}
+	if data["errcode"].(int) == 0 {
+		return data["userid"].(string)
+	}
+	return ""
+}
 func (d *dingtalkAuth) GetUserDetail(userId string) *request.UserDetail {
 	url := d.url(`topapi/v2/user/get?access_token=%s`, d.GetAccessToken())
 	buf, err := request.Post(url, []byte(fmt.Sprintf(`{"userid":"%s"}`, userId)))
@@ -149,7 +183,7 @@ func (d *dingtalkAuth) loadData() {
 	}
 }
 func (d *dingtalkAuth) saveData() {
-	data := fmt.Sprintf(`{"token":"%s","last":%d"`, d.access_token, d.access_last.Unix())
+	data := fmt.Sprintf(`{"token":"%s","last":%d}`, d.access_token, d.access_last.Unix())
 	os.WriteFile("zyauth.hisory", []byte(data), 0666)
 }
 

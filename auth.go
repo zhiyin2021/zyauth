@@ -1,6 +1,9 @@
 package zyauth
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -41,4 +44,22 @@ func NewAuth(tp, appId, appSecret, agentId string) Auth {
 	}
 	auth.loadData()
 	return auth
+}
+
+func (d *authBase) loadData() {
+	tmp, err := os.ReadFile("zyauth.hisory")
+	if err == nil {
+		var data struct {
+			Token string `json:"token"`
+			Last  int64  `json:"last"`
+		}
+		if err := json.Unmarshal(tmp, &data); err == nil {
+			d.access_token = data.Token
+			d.access_last = time.Unix(data.Last, 0)
+		}
+	}
+}
+func (d *authBase) saveData() {
+	data := fmt.Sprintf(`{"token":"%s","last":%d}`, d.access_token, d.access_last.Unix())
+	os.WriteFile("zyauth.hisory", []byte(data), 0666)
 }

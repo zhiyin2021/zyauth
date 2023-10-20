@@ -1,15 +1,24 @@
 package request
 
+// {
+// 	"accessToken" : "abcd",
+// 	"refreshToken" : "abcd",
+// 	"expireIn" : 7200,
+// 	"corpId" : "corpxxxx"
+//   }
+
+type DUserAccessToken struct {
+	AccessToken  string `json:"accessToken"`
+	ExpireIn     int    `json:"expireIn"`
+	CorpId       string `json:"corpId"`
+	RefreshToken string `json:"refreshToken"`
+}
 type DUserInfo struct {
 	base
 	Result struct {
-		AssociatedUnionid string `json:"associated_unionid"`
-		Unionid           string `json:"unionid"`
-		DeviceId          string `json:"device_id"`
-		SysLevel          int    `json:"sys_level"`
-		Name              string `json:"name"`
-		Sys               bool   `json:"sys"`
-		Userid            string `json:"userid"`
+		Unionid string `json:"unionid"`
+		OpenId  string `json:"openid"`
+		Nick    string `json:"nick"`
 	} `json:"result"`
 }
 

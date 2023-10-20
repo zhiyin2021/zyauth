@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -18,6 +19,7 @@ type AccessToken struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
 }
+type H map[string]any
 
 func request(url string, method string, data io.Reader) ([]byte, error) {
 	req, err := http.NewRequest(method, url, data)
@@ -37,13 +39,13 @@ func request(url string, method string, data io.Reader) ([]byte, error) {
 	var tmp struct {
 		url    string
 		method string
-		buf    []byte
+		buf    string
 		err    error
 		param  string
 	}
 	tmp.url = url
 	tmp.method = method
-	tmp.buf = buf
+	tmp.buf = string(buf)
 	tmp.err = err
 	if data != nil {
 		buf, err := io.ReadAll(data)
@@ -63,7 +65,11 @@ func Get(url string) ([]byte, error) {
 		return data, nil
 	}
 }
-func Post(url string, buf []byte) ([]byte, error) {
+func Post(url string, data any) ([]byte, error) {
+	buf, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
 	reader := bytes.NewReader(buf)
 	if data, err := request(url, "POST", reader); err != nil {
 		logrus.Errorf("post %s, err:%s", url, err)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/zhiyin2021/zyauth/request"
@@ -118,22 +117,4 @@ func (w *wechatAuth) SendMessage(toUser, content string) error {
 func (w *wechatAuth) AuthUrl(redirectUrl, state string) string {
 	return fmt.Sprintf(`https://open.work.weixin.qq.com/wwopen/sso/qrConnect?appid=%s&agentid=%s&state=%s&redirect_uri=%s&self_redirect=true`,
 		w.appId, w.agentId, state, url.QueryEscape(redirectUrl))
-}
-
-func (d *wechatAuth) loadData() {
-	tmp, err := os.ReadFile("zyauth.hisory")
-	if err == nil {
-		var data struct {
-			Token string `json:"token"`
-			Last  int64  `json:"last"`
-		}
-		if err := json.Unmarshal(tmp, &data); err == nil {
-			d.access_token = data.Token
-			d.access_last = time.Unix(data.Last, 0)
-		}
-	}
-}
-func (d *wechatAuth) saveData() {
-	data := fmt.Sprintf(`{"token":"%s","last":%d"`, d.access_token, d.access_last.Unix())
-	os.WriteFile("zyauth.hisory", []byte(data), 0666)
 }
