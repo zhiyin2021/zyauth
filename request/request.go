@@ -30,12 +30,11 @@ func request(url string, method string, data io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var body []byte
-	_, err = resp.Body.Read(body)
+	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return body, nil
+	return buf, nil
 }
 
 func Get(url string) ([]byte, error) {
