@@ -34,6 +34,24 @@ func request(url string, method string, data io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	var tmp struct {
+		url    string
+		method string
+		buf    []byte
+		err    error
+		param  string
+	}
+	tmp.url = url
+	tmp.method = method
+	tmp.buf = buf
+	tmp.err = err
+	if data != nil {
+		buf, err := io.ReadAll(data)
+		if err == nil {
+			tmp.param = string(buf)
+		}
+	}
+	logrus.Warnf("request=>%+v", tmp)
 	return buf, nil
 }
 
@@ -48,7 +66,7 @@ func Get(url string) ([]byte, error) {
 func Post(url string, buf []byte) ([]byte, error) {
 	reader := bytes.NewReader(buf)
 	if data, err := request(url, "POST", reader); err != nil {
-		logrus.Errorf("get %s, err:%s", url, err)
+		logrus.Errorf("post %s, err:%s", url, err)
 		return nil, err
 	} else {
 		return data, nil
