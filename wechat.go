@@ -25,7 +25,7 @@ func (w *wechatAuth) GetAccessToken() string {
 		return w.access_token
 	}
 	url := w.url(`gettoken?corpid=%s&corpsecret=%s`, w.appId, w.appSecret)
-	buf, err := request.Get(url)
+	buf, err := request.Get(url, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return ""
@@ -41,31 +41,31 @@ func (w *wechatAuth) GetAccessToken() string {
 }
 func (w *wechatAuth) GetUserInfo(code string) *request.UserInfo {
 	url := w.url(`user/getuserinfo?access_token=%s&code=%s`, w.GetAccessToken(), code)
-	buf, err := request.Get(url)
+	buf, err := request.Get(url, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
 	}
-	var data *request.UserInfo
+	var data request.UserInfo
 	if err := json.Unmarshal(buf, &data); err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
 	}
-	return data
+	return &data
 }
 func (w *wechatAuth) GetUserDetail(userId string) *request.UserDetail {
 	url := w.url(`user/get?access_token=%s&userid=%s`, w.GetAccessToken(), userId)
-	buf, err := request.Get(url)
+	buf, err := request.Get(url, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
 	}
-	var data *request.UserDetail
+	var data request.UserDetail
 	if err := json.Unmarshal(buf, &data); err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
 	}
-	return data
+	return &data
 }
 
 func (w *wechatAuth) SendCard(toUser string, card request.WxMessageCard) error {
@@ -86,7 +86,7 @@ func (w *wechatAuth) SendCard(toUser string, card request.WxMessageCard) error {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
-	if _, err := request.Post(url, buf); err != nil {
+	if _, err := request.Post(url, buf, nil); err != nil {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
@@ -107,7 +107,7 @@ func (w *wechatAuth) SendMessage(toUser, content string) error {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
-	if _, err := request.Post(action, buf); err != nil {
+	if _, err := request.Post(action, buf, nil); err != nil {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}

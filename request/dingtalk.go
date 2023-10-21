@@ -13,13 +13,19 @@ type DUserAccessToken struct {
 	CorpId       string `json:"corpId"`
 	RefreshToken string `json:"refreshToken"`
 }
-type DUserInfo struct {
+type DUserId struct {
 	base
 	Result struct {
-		Unionid string `json:"unionid"`
-		OpenId  string `json:"openid"`
-		Nick    string `json:"nick"`
+		UserId string `json:"userid"`
 	} `json:"result"`
+}
+
+type DUserInfo struct {
+	Unionid string `json:"unionid"`
+	OpenId  string `json:"openid"`
+	Nick    string `json:"nick"`
+	Mobile  string `json:"mobile"`
+	Avatar  string `json:"avatarUrl"`
 }
 
 type DUserDetail struct {

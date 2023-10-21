@@ -21,10 +21,15 @@ type AccessToken struct {
 }
 type H map[string]any
 
-func request(url string, method string, data io.Reader) ([]byte, error) {
+func request(url string, method string, data io.Reader, header H) ([]byte, error) {
 	req, err := http.NewRequest(method, url, data)
 	if err != nil {
 		return nil, err
+	}
+	if header != nil {
+		for k, v := range header {
+			req.Header.Set(k, v.(string))
+		}
 	}
 	client := http.Client{}
 	resp, err := client.Do(req)
@@ -57,21 +62,21 @@ func request(url string, method string, data io.Reader) ([]byte, error) {
 	return buf, nil
 }
 
-func Get(url string) ([]byte, error) {
-	if data, err := request(url, "GET", nil); err != nil {
+func Get(url string, header H) ([]byte, error) {
+	if data, err := request(url, "GET", nil, header); err != nil {
 		logrus.Errorf("get %s, err:%s", url, err)
 		return nil, err
 	} else {
 		return data, nil
 	}
 }
-func Post(url string, data any) ([]byte, error) {
+func Post(url string, data any, header H) ([]byte, error) {
 	buf, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 	reader := bytes.NewReader(buf)
-	if data, err := request(url, "POST", reader); err != nil {
+	if data, err := request(url, "POST", reader, header); err != nil {
 		logrus.Errorf("post %s, err:%s", url, err)
 		return nil, err
 	} else {

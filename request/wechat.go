@@ -20,9 +20,11 @@ type Code2SessionResult struct {
 }
 type UserInfo struct {
 	base
-	UserId string `json:"userId"`
-	OpenId string `json:"openId"`
-	Mobile string `json:"mobile"`
+	Nick    string `json:"nick"`
+	UserId  string `json:"userId"`
+	OpenId  string `json:"openId"`
+	Mobile  string `json:"mobile"`
+	Unionid string `json:"unionid"`
 }
 
 type UserDetail struct {

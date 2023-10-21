@@ -1,9 +1,6 @@
 package zyauth
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -19,7 +16,13 @@ type dingtalkAuth struct {
 	*authBase
 }
 
-func (d *dingtalkAuth) url(action string, args ...any) string {
+// {HTTP method} https://api.dingtalk.com/{version}/{resource}?{query-parameters}
+func (d *dingtalkAuth) api(action string, args ...any) string {
+	// return fmt.Sprintf("https://oapi.dingtalk.com/"+action, args...)
+	return fmt.Sprintf("https://api.dingtalk.com/"+action, args...)
+}
+func (d *dingtalkAuth) topapi(action string, args ...any) string {
+	// return fmt.Sprintf("https://oapi.dingtalk.com/"+action, args...)
 	return fmt.Sprintf("https://oapi.dingtalk.com/"+action, args...)
 }
 func (d *dingtalkAuth) GetAccessToken() string {
@@ -28,8 +31,8 @@ func (d *dingtalkAuth) GetAccessToken() string {
 	if time.Since(d.access_last) < time.Second*7200 {
 		return d.access_token
 	}
-	url := d.url(`gettoken?appkey=%s&appsecret=%s`, d.appId, d.appSecret)
-	buf, err := request.Get(url)
+	url := d.topapi(`gettoken?appkey=%s&appsecret=%s`, d.appId, d.appSecret)
+	buf, err := request.Get(url, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return ""
@@ -44,62 +47,62 @@ func (d *dingtalkAuth) GetAccessToken() string {
 	d.saveData()
 	return d.access_token
 }
-func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
-	// url := d.url(`topapi/v2/user/getuserinfo?access_token=%s`, d.GetAccessToken())
-	timestamp, sign := d.genSign()
-	url := d.url(`sns/getuserinfo_bycode?accessKey=%s&timestamp=%s&signature=&s`, d.GetAccessToken(), timestamp, sign)
+func (d *dingtalkAuth) getUserToken(code string) string {
+	url := d.api(`v1.0/oauth2/userAccessToken`)
 
-	buf, err := request.Post(url, request.H{"tmp_auth_code": code})
+	buf, err := request.Post(url, request.H{
+		"clientId":     d.appId,
+		"clientSecret": d.appSecret,
+		"code":         code,
+		"grantType":    "authorization_code",
+	}, nil)
 	if err != nil {
-		logrus.Errorf("get accesstoken err:%s", err)
+		logrus.Errorf("getUserToken err:%s", err)
+		return ""
+	}
+	var data request.H
+	if err := json.Unmarshal(buf, &data); err != nil {
+		logrus.Errorf("getUserToken json.unmarshal[%s] err:%s", buf, err)
+		return ""
+	}
+	return data["accessToken"].(string)
+}
+
+func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
+
+	action := d.api("v1.0/contact/users/me")
+	buf, err := request.Get(action, request.H{"x-acs-dingtalk-access-token": d.getUserToken(code)})
+
+	if err != nil {
+		logrus.Errorf("GetUserInfo err:%s", err)
 		return nil
 	}
-	var data *request.DUserInfo
+	var data request.DUserInfo
 	if err := json.Unmarshal(buf, &data); err != nil {
-		logrus.Errorf("get accesstoken err:%s", err)
+		logrus.Errorf("GetUserInfo unjson %s, err:%s", buf, err)
 		return nil
 	}
 	userInfo := &request.UserInfo{
-		UserId: d.unionIdToUserId(data.Result.Unionid),
+		Unionid: data.Unionid,
+		OpenId:  data.OpenId,
+		Nick:    data.Nick,
+		Mobile:  data.Mobile,
 	}
 	return userInfo
 }
-func (d *dingtalkAuth) genSign() (string, string) {
-	timestamp := fmt.Sprintf("%d", time.Now().UnixMilli())
-	mac := hmac.New(sha256.New, []byte(d.appSecret))
-	tmp := mac.Sum([]byte(timestamp))
-	sign := base64.StdEncoding.EncodeToString(tmp)
-	sign = url.QueryEscape(sign)
-	return timestamp, sign
-}
-func (d *dingtalkAuth) unionIdToUserId(unionid string) string {
 
-	// url := d.url(`topapi/v2/user/getuserinfo?access_token=%s`, d.GetAccessToken())
-	url := d.url(`user/getUseridByUnionid?accessKey=%s&unionid=%s`, d.GetAccessToken(), unionid)
-
-	buf, err := request.Get(url)
-	if err != nil {
-		logrus.Errorf("get accesstoken err:%s", err)
-		return ""
+func (d *dingtalkAuth) GetUserDetail(unionId string) *request.UserDetail {
+	userId := d.getUseridByUnionid(unionId)
+	if userId == "" {
+		return nil
 	}
-	var data map[string]any
-	if err := json.Unmarshal(buf, &data); err != nil {
-		logrus.Errorf("get accesstoken err:%s", err)
-		return ""
-	}
-	if data["errcode"].(int) == 0 {
-		return data["userid"].(string)
-	}
-	return ""
-}
-func (d *dingtalkAuth) GetUserDetail(userId string) *request.UserDetail {
-	url := d.url(`topapi/v2/user/get?access_token=%s`, d.GetAccessToken())
-	buf, err := request.Post(url, []byte(fmt.Sprintf(`{"userid":"%s"}`, userId)))
+	url := d.topapi(`topapi/v2/user/get?access_token=%s`, d.GetAccessToken())
+	buf, err := request.Post(url, request.H{"userid": userId}, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
 	}
-	var data *request.DUserDetail
+	var data request.DUserDetail
 	if err := json.Unmarshal(buf, &data); err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
 		return nil
@@ -118,7 +121,7 @@ func (d *dingtalkAuth) GetUserDetail(userId string) *request.UserDetail {
 }
 
 func (d *dingtalkAuth) SendCard(toUser string, card request.WxMessageCard) error {
-	action := d.url(`message/send?access_token=%s`, d.GetAccessToken())
+	action := d.api(`topapi/message/send?access_token=%s`, d.GetAccessToken())
 	wxmsg := request.WxMessage{
 		AgentId: d.agentId,
 		ToUser:  toUser,
@@ -130,20 +133,14 @@ func (d *dingtalkAuth) SendCard(toUser string, card request.WxMessageCard) error
 			Btntxt:      card.Btntxt,
 		},
 	}
-	buf, err := json.Marshal(wxmsg)
-	if err != nil {
-		logrus.Errorf("send card err:%s", err)
-		return err
-	}
-
-	if _, err := request.Post(action, buf); err != nil {
+	if _, err := request.Post(action, wxmsg, nil); err != nil {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
 	return nil
 }
 func (d *dingtalkAuth) SendMessage(toUser, content string) error {
-	action := d.url(`message/send?access_token=%s`, d.GetAccessToken())
+	action := d.api(`topapi/message/send?access_token=%s`, d.GetAccessToken())
 	wxmsg := request.WxMessage{
 		AgentId: d.agentId,
 		ToUser:  toUser,
@@ -157,7 +154,7 @@ func (d *dingtalkAuth) SendMessage(toUser, content string) error {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
-	if _, err := request.Post(action, buf); err != nil {
+	if _, err := request.Post(action, buf, nil); err != nil {
 		logrus.Errorf("send card err:%s", err)
 		return err
 	}
@@ -187,24 +184,20 @@ func (d *dingtalkAuth) saveData() {
 	os.WriteFile("zyauth.hisory", []byte(data), 0666)
 }
 
-// func OnChatReceive(ctx context.Context, data *chatbot.BotCallbackDataModel) ([]byte, error) {
-// 	return []byte("success"), nil
-// }
-
-// func Init() {
-// 	logger.SetLogger(logger.NewStdTestLogger())
-// 	cli := client.NewStreamClient(
-// 		client.WithAppCredential(client.NewAppCredentialConfig(env.Config().GetString("dingtalk.appId"), env.Config().GetString("dingtalk.appSecret"))),
-// 		client.WithUserAgent(client.NewDingtalkGoSDKUserAgent()),
-// 		client.WithSubscription(utils.SubscriptionTypeKCallback, "", chatbot.NewDefaultChatBotFrameHandler(OnChatReceive).OnEventReceived),
-// 	)
-
-// 	err := cli.Start(context.Background())
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	defer cli.Close()
-
-//		select {}
-//	}
+func (d *dingtalkAuth) getUseridByUnionid(unionId string) string {
+	url := d.topapi("topapi/user/getbyunionid?access_token=%s", d.GetAccessToken())
+	buf, err := request.Post(url, request.H{"unionid": unionId}, nil)
+	if err != nil {
+		logrus.Errorf("getUseridByUnionid request.err:%s", err)
+		return ""
+	}
+	var data request.DUserId
+	if err := json.Unmarshal(buf, &data); err != nil {
+		logrus.Errorf("getUseridByUnionid unjson.err:%s", err)
+		return ""
+	}
+	if data.ErrCode == 0 {
+		return data.Result.UserId
+	}
+	return ""
+}
