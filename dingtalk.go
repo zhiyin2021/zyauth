@@ -49,7 +49,7 @@ func (d *dingtalkAuth) GetAccessToken() string {
 }
 func (d *dingtalkAuth) getUserToken(code string) string {
 	url := d.api(`v1.0/oauth2/userAccessToken`)
-
+	// https://api.dingtalk.com/v1.0/oauth2/userAccessToken method:POST buf:{"expireIn":7200,"accessToken":"f992392321953e9892076b0c748b75cb","refreshToken":"70516328885f3edc8aa491a961178859"} err:<nil> param:}
 	buf, err := request.Post(url, request.H{
 		"clientId":     d.appId,
 		"clientSecret": d.appSecret,
@@ -65,13 +65,19 @@ func (d *dingtalkAuth) getUserToken(code string) string {
 		logrus.Errorf("getUserToken json.unmarshal[%s] err:%s", buf, err)
 		return ""
 	}
-	return data["accessToken"].(string)
+	if v, ok := data["accessToken"].(string); ok {
+		return v
+	}
+	return ""
+
+	// https://api.dingtalk.com/v1.0/oauth2/userAccessToken method:POST buf:{"code":"Missingbody","requestid":"90863DAE-1842-76EF-92F2-1ADEC7C89D6B","message":"body is mandatory for this action."} err:<nil> param:}
+
 }
 
 func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
-
 	action := d.api("v1.0/contact/users/me")
 	buf, err := request.Get(action, request.H{"x-acs-dingtalk-access-token": d.getUserToken(code)})
+	// https://api.dingtalk.com/v1.0/contact/users/me method:GET buf:{"nick":"金华","unionId":"vQR2XRTIXbAUYtz7oy0nfwiEiE","openId":"Uq1wkz7qyLzomuUviPEkPugiEiE","mobile":"19942422224","stateCode":"86"} err:<nil> param:}
 
 	if err != nil {
 		logrus.Errorf("GetUserInfo err:%s", err)
@@ -83,6 +89,7 @@ func (d *dingtalkAuth) GetUserInfo(code string) *request.UserInfo {
 		return nil
 	}
 	userInfo := &request.UserInfo{
+		UserId:  data.Unionid,
 		Unionid: data.Unionid,
 		OpenId:  data.OpenId,
 		Nick:    data.Nick,

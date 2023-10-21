@@ -26,11 +26,10 @@ func request(url string, method string, data io.Reader, header H) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	if header != nil {
-		for k, v := range header {
-			req.Header.Set(k, v.(string))
-		}
+	for k, v := range header {
+		req.Header.Set(k, v.(string))
 	}
+	req.Header.Set("Content-Type", "application/json")
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -75,7 +74,7 @@ func Post(url string, data any, header H) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	reader := bytes.NewReader(buf)
+	reader := bytes.NewBuffer(buf)
 	if data, err := request(url, "POST", reader, header); err != nil {
 		logrus.Errorf("post %s, err:%s", url, err)
 		return nil, err
