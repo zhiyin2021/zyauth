@@ -104,6 +104,9 @@ func (d *dingtalkAuth) GetUserDetail(unionId string) *request.UserDetail {
 		return nil
 	}
 	url := d.topapi(`topapi/v2/user/get?access_token=%s`, d.GetAccessToken())
+	// https://oapi.dingtalk.com/topapi/v2/user/get?access_token=40b36df674dc38209553ce5a939c4624 method:POST
+	//buf:{"errcode":0,"errmsg":"ok","result":{"active":true,"admin":true,"avatar":"","boss":true,"dept_id_list":[1],"dept_order_list":[{"dept_id":1,"order":176220178909140512}],"exclusive_account":false,"hide_mobile":false,"leader_in_dept":[{"dept_id":1,"leader":false}],"mobile":"19942422224","name":"金华","real_authed":true,"role_list":[{"group_name":"默认","id":3935025514,"name":"主管理员"},{"group_name":"默认","id":3935025516,"name":"负责人"}],"senior":false,"state_code":"86","unionid":"vQR2XRTIXbAUYtz7oy0nfwiEiE","userid":"18293148161178525"},"request_id":"16lzmj9nqoklx"} err:<nil> param:}
+	//get accesstoken err:json: cannot unmarshal array into Go struct field .result.dept_id_list of type string
 	buf, err := request.Post(url, request.H{"userid": userId}, nil)
 	if err != nil {
 		logrus.Errorf("get accesstoken err:%s", err)
@@ -115,7 +118,7 @@ func (d *dingtalkAuth) GetUserDetail(unionId string) *request.UserDetail {
 		return nil
 	}
 	userDetail := &request.UserDetail{
-		UserId: data.Result.Userid,
+		UserId: data.Result.UserId,
 		Name:   data.Result.Name,
 		Mobile: data.Result.Mobile,
 		Avatar: data.Result.Avatar,

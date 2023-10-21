@@ -31,42 +31,43 @@ type DUserInfo struct {
 type DUserDetail struct {
 	base
 	Result struct {
-		Extension string `json:"extension"`
-		Unionid   string `json:"unionid"`
-		Boss      bool   `json:"boss"`
-		RoleList  []struct {
+		UserId           string `json:"userid"`            // 员工在当前企业内的唯一标识，也称staffId
+		Unionid          string `json:"unionid"`           // 员工在当前开发者企业账号范围内的唯一标识
+		Name             string `json:"name"`              // 员工姓名
+		Boss             bool   `json:"boss"`              // 是否为企业的老板，true表示是，false表示不是
+		Mobile           string `json:"mobile"`            // 手机号码
+		Active           bool   `json:"active"`            // 是否已经激活，true表示已激活，false表示未激活
+		ManagerUserid    string `json:"manager_userid"`    // 上级领导的userid
+		Title            string `json:"title"`             // 职位信息
+		ExclusiveAccount bool   `json:"exclusive_account"` // 是否为企业账号
+
+		RoleList []struct {
 			GroupName string `json:"group_name"`
 			Name      string `json:"name"`
 			Id        string `json:"id"`
 		} `json:"role_list"`
-		ExclusiveAccount bool   `json:"exclusive_account"`
-		ManagerUserid    string `json:"manager_userid"`
-		Admin            bool   `json:"admin"`
-		Remark           string `json:"remark"`
-		Title            string `json:"title"`
-		HiredDate        int64  `json:"hired_date"`
-		Userid           string `json:"userid"`
-		WorkPlace        string `json:"work_place"`
-		DeptOrderList    []struct {
+		Admin     bool   `json:"admin"`
+		Remark    string `json:"remark"`
+		HiredDate int64  `json:"hired_date"`
+
+		WorkPlace     string `json:"work_place"`
+		DeptOrderList []struct {
 			DeptId string `json:"dept_id"`
 			Order  string `json:"order"`
 		} `json:"dept_order_list"`
-		RealAuthed   bool   `json:"real_authed"`
-		DeptIdList   string `json:"dept_id_list"`
+		RealAuthed bool `json:"real_authed"`
+		// DeptIdList   string `json:"dept_id_list"`
 		JobNumber    string `json:"job_number"`
 		Email        string `json:"email"`
 		LeaderInDept struct {
 			Leader bool   `json:"leader"`
 			DeptId string `json:"dept_id"`
 		} `json:"leader_in_dept"`
-		Mobile      string `json:"mobile"`
-		Active      bool   `json:"active"`
 		OrgEmail    string `json:"org_email"`
 		Telephone   string `json:"telephone"`
 		Avatar      string `json:"avatar"`
 		HideMobile  bool   `json:"hide_mobile"`
 		Senior      bool   `json:"senior"`
-		Name        string `json:"name"`
 		UnionEmpExt struct {
 			UnionEmpMapList []struct {
 				Userid string `json:"userid"`
