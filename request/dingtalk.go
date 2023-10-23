@@ -44,7 +44,7 @@ type DUserDetail struct {
 		RoleList []struct {
 			GroupName string `json:"group_name"`
 			Name      string `json:"name"`
-			Id        string `json:"id"`
+			Id        int64  `json:"id"`
 		} `json:"role_list"`
 		Admin     bool   `json:"admin"`
 		Remark    string `json:"remark"`
@@ -52,16 +52,16 @@ type DUserDetail struct {
 
 		WorkPlace     string `json:"work_place"`
 		DeptOrderList []struct {
-			DeptId string `json:"dept_id"`
-			Order  string `json:"order"`
+			DeptId int64 `json:"dept_id"`
+			Order  int64 `json:"order"`
 		} `json:"dept_order_list"`
 		RealAuthed bool `json:"real_authed"`
 		// DeptIdList   string `json:"dept_id_list"`
 		JobNumber    string `json:"job_number"`
 		Email        string `json:"email"`
-		LeaderInDept struct {
-			Leader bool   `json:"leader"`
-			DeptId string `json:"dept_id"`
+		LeaderInDept []struct {
+			Leader bool `json:"leader"`
+			DeptId int  `json:"dept_id"`
 		} `json:"leader_in_dept"`
 		OrgEmail    string `json:"org_email"`
 		Telephone   string `json:"telephone"`

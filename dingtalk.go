@@ -118,11 +118,15 @@ func (d *dingtalkAuth) GetUserDetail(unionId string) *request.UserDetail {
 		return nil
 	}
 	userDetail := &request.UserDetail{
-		UserId: data.Result.UserId,
-		Name:   data.Result.Name,
-		Mobile: data.Result.Mobile,
-		Avatar: data.Result.Avatar,
-		Status: 0,
+		UserId:   data.Result.UserId,
+		Name:     data.Result.Name,
+		Mobile:   data.Result.Mobile,
+		Avatar:   data.Result.Avatar,
+		Position: data.Result.Title,
+		Status:   1,
+	}
+	if data.Result.Active {
+		userDetail.Status = 2
 	}
 	if data.Result.Active {
 		userDetail.Status = 1

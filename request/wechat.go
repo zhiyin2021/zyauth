@@ -29,19 +29,20 @@ type UserInfo struct {
 
 type UserDetail struct {
 	base
-	UserId    string    `json:"userId"`
-	Watermark Watermark `json:"watermark"`
-	OpenId    string    `json:"openId"`
-	NickName  string    `json:"nickName"`
-	Gender    int       `json:"gender"`
-	City      string    `json:"city"`
-	Province  string    `json:"province"`
-	Country   string    `json:"country"`
-	Avatar    string    `json:"avatar"`
-	UnionId   string    `json:"unionId"`
-	Name      string    `json:"name"`
-	Mobile    string    `json:"mobile"`
-	Status    int       `json:"status"`
+	UserId    string    `json:"userId"`    // 员工在当前企业内的唯一标识，也称staffId
+	Watermark Watermark `json:"watermark"` // 数据水印
+	OpenId    string    `json:"openId"`    // 员工在当前开发者企业账号范围内的唯一标识
+	NickName  string    `json:"nickName"`  // 员工姓名
+	Gender    int       `json:"gender"`    // 性别 0：未知、1：男、2：女
+	City      string    `json:"city"`      // 城市，如杭州市
+	Province  string    `json:"province"`  // 省份，如浙江省为Zhejiang
+	Country   string    `json:"country"`   // 国家，如中国为CN
+	Avatar    string    `json:"avatar"`    // 头像url
+	UnionId   string    `json:"unionId"`   // 员工在当前开发者企业账号范围内的唯一标识
+	Name      string    `json:"name"`      // 员工姓名
+	Mobile    string    `json:"mobile"`    // 手机号码
+	Position  string    `json:"position"`  // 职位
+	Status    int       `json:"status"`    // 员工在企业内的状态 1:已激活 2:已禁用 4:未激活
 }
 type Watermark struct {
 	Appid     string `json:"appid"`
